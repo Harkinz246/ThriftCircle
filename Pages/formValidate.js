@@ -1,3 +1,4 @@
+
 // validation.js
 
 const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
@@ -12,7 +13,9 @@ const passwordRegex =
   /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[^A-Za-z\d]).{8,}$/;
 
 
-// ---------- HELPER FUNCTIONS ----------
+// ========================================
+// HELPER FUNCTIONS
+// ========================================
 
 function showError(input, message) {
   const error = input.parentElement.querySelector(".error");
@@ -43,7 +46,9 @@ function isEmpty(value) {
 }
 
 
-// ---------- SIGN UP VALIDATION ----------
+// ========================================
+// SIGNUP VALIDATION
+// ========================================
 
 function validateSignup() {
 
@@ -55,54 +60,79 @@ function validateSignup() {
   let valid = true;
 
 
-  // Name
+  // NAME
   if (isEmpty(name.value)) {
+
     showError(name, "Name is required.");
     valid = false;
+
   } else if (name.value.trim().length < 2) {
+
     showError(name, "Name must contain at least 2 characters.");
     valid = false;
+
   } else {
+
     showSuccess(name);
+
   }
 
 
-  // Email
+  // EMAIL
   if (isEmpty(email.value)) {
+
     showError(email, "Email is required.");
     valid = false;
+
   } else if (!emailRegex.test(email.value.trim())) {
+
     showError(email, "Enter a valid email address.");
     valid = false;
+
   } else {
+
     showSuccess(email);
+
   }
 
 
-  // Password
+  // PASSWORD
   if (isEmpty(password.value)) {
+
     showError(password, "Password is required.");
     valid = false;
+
   } else if (!passwordRegex.test(password.value)) {
+
     showError(
       password,
       "Password must be 8+ characters with uppercase, lowercase, number and symbol."
     );
+
     valid = false;
+
   } else {
+
     showSuccess(password);
+
   }
 
 
-  // Confirm password
+  // CONFIRM PASSWORD
   if (isEmpty(confirmPassword.value)) {
+
     showError(confirmPassword, "Please confirm your password.");
     valid = false;
+
   } else if (password.value !== confirmPassword.value) {
+
     showError(confirmPassword, "Passwords do not match.");
     valid = false;
+
   } else {
+
     showSuccess(confirmPassword);
+
   }
 
 
@@ -110,7 +140,9 @@ function validateSignup() {
 }
 
 
-// ---------- LOGIN VALIDATION ----------
+// ========================================
+// LOGIN VALIDATION
+// ========================================
 
 function validateLogin() {
 
@@ -120,24 +152,34 @@ function validateLogin() {
   let valid = true;
 
 
-  // Email
+  // EMAIL
   if (isEmpty(email.value)) {
+
     showError(email, "Email is required.");
     valid = false;
+
   } else if (!emailRegex.test(email.value.trim())) {
+
     showError(email, "Enter a valid email address.");
     valid = false;
+
   } else {
+
     showSuccess(email);
+
   }
 
 
-  // Password
+  // PASSWORD
   if (isEmpty(password.value)) {
+
     showError(password, "Password is required.");
     valid = false;
+
   } else {
+
     showSuccess(password);
+
   }
 
 
@@ -145,31 +187,189 @@ function validateLogin() {
 }
 
 
-// ---------- SIGNUP FORM ----------
+// ========================================
+// SIGNUP → BACKEND
+// ========================================
 
 const signupForm = document.querySelector("#signupForm");
 
 if (signupForm) {
-  signupForm.addEventListener("submit", function (event) {
 
+  signupForm.addEventListener("submit", async function (event) {
+
+    event.preventDefault();
+
+
+    // First validate the frontend
     if (!validateSignup()) {
-      event.preventDefault();
+      return;
+    }
+
+
+    // Get form values
+    const name = document.querySelector("#name").value.trim();
+
+    const email = document
+      .querySelector("#signupEmail")
+      .value
+      .trim()
+      .toLowerCase();
+
+    const password =
+      document.querySelector("#signupPassword").value;
+
+
+    try {
+
+      // Send data to your backend
+      const response = await fetch(
+        "http://localhost:3000/api/auth/signup",
+        {
+          method: "POST",
+
+          headers: {
+            "Content-Type": "application/json"
+          },
+
+          credentials: "include",
+
+          body: JSON.stringify({
+            name: name,
+            email: email,
+            password: password
+          })
+        }
+      );
+
+
+      const data = await response.json();
+
+
+      // Backend returned an error
+      if (!response.ok) {
+
+        showError(
+          document.querySelector("#signupEmail"),
+          data.message || "Unable to create account."
+        );
+
+        return;
+      }
+
+
+      // SUCCESS
+      console.log("Signup successful:", data);
+
+      alert("Account created successfully!");
+
+
+      // Send user to login page
+      window.location.href = "login.html";
+
+
+    } catch (error) {
+
+      console.error("Signup error:", error);
+
+      alert(
+        "Unable to connect to the server. Please try again."
+      );
+
     }
 
   });
+
 }
 
 
-// ---------- LOGIN FORM ----------
+// ========================================
+// LOGIN → BACKEND
+// ========================================
 
 const loginForm = document.querySelector("#loginForm");
 
 if (loginForm) {
-  loginForm.addEventListener("submit", function (event) {
 
+  loginForm.addEventListener("submit", async function (event) {
+
+    event.preventDefault();
+
+
+    // First validate the frontend
     if (!validateLogin()) {
-      event.preventDefault();
+      return;
+    }
+
+
+    // Get form values
+    const email = document
+      .querySelector("#loginEmail")
+      .value
+      .trim()
+      .toLowerCase();
+
+    const password =
+      document.querySelector("#loginPassword").value;
+
+
+    try {
+
+      // Send login information to backend
+      const response = await fetch(
+        "http://localhost:3000/api/auth/login",
+        {
+          method: "POST",
+
+          headers: {
+            "Content-Type": "application/json"
+          },
+
+          credentials: "include",
+
+          body: JSON.stringify({
+            email: email,
+            password: password
+          })
+        }
+      );
+
+
+      const data = await response.json();
+
+
+      // Login failed
+      if (!response.ok) {
+
+        showError(
+          document.querySelector("#loginEmail"),
+          data.message || "Invalid email or password."
+        );
+
+        return;
+      }
+
+
+      // LOGIN SUCCESSFUL
+      console.log("Login successful:", data);
+
+      alert("Login successful!");
+
+
+      // Go to dashboard
+      window.location.href = "dashboard.html";
+
+
+    } catch (error) {
+
+      console.error("Login error:", error);
+
+      alert(
+        "Unable to connect to the server. Please try again."
+      );
+
     }
 
   });
+
 }
+
